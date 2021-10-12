@@ -1,16 +1,11 @@
-listOfNumbers = input('Wprowadź listę liczb' + "\n")
-teortycznaSuma = int(input())
-wprowadzonaLista = listOfNumbers.split()
-
-
-def check(wprowadzonaLista, teortycznaSuma):
+def check(lista, suma):
     RESULT = False
-    for i in range(len(wprowadzonaLista)):
-        for j in range(i + 1, len(wprowadzonaLista)):
-            wprowadzonaLista[i] = int(wprowadzonaLista[i])
-            wprowadzonaLista[j] = int(wprowadzonaLista[j])
+    for i in range(len(lista)):
+        for j in range(i + 1, len(lista)):
+            lista[i] = int(lista[i])
+            lista[j] = int(lista[j])
 
-            if wprowadzonaLista[i] + wprowadzonaLista[j] == teortycznaSuma:
+            if lista[i] + lista[j] == suma:
                 RESULT = True
                 break
     if RESULT:
@@ -19,5 +14,12 @@ def check(wprowadzonaLista, teortycznaSuma):
         print("False")
 
 
-if __name__ == '__main__':
+def main():
+    listOfNumbers = input('Wprowadź listę liczb' + "\n")
+    teortycznaSuma = int(input())
+    wprowadzonaLista = listOfNumbers.split()
     check(wprowadzonaLista, teortycznaSuma)
+
+
+if __name__ == '__main__':
+    main()
