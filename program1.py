@@ -13,7 +13,7 @@ def check(wprowadzonaLista, teortycznaSuma):
             if wprowadzonaLista[i] + wprowadzonaLista[j] == teortycznaSuma:
                 RESULT = True
                 break
-    if RESULT == True:
+    if RESULT:
         print("True")
     else:
         print("False")
