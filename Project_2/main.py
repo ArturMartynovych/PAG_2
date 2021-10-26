@@ -1,4 +1,5 @@
 from tqdm import tqdm
+import pandas as pd
 import os
 import requests
 import zipfile
@@ -27,11 +28,19 @@ def unzipFiles(year, month):
         zip_ref.extractall(extract_path)
 
 
+def readCSV(path, year, month):
+    csv_path = f'dane-imgw\B00202A_{year}_{month}.csv'
+    data = pd.read_csv(csv_path, sep=';')
+    return data
+
+
 def main():
     year = input('Podaj rok: ')
     month = input('Podaj miesiąc: ')
-    downloadFiles(year, month)
-    unzipFiles(year, month)
+    # downloadFiles(year, month)
+    # unzipFiles(year, month)
+    readCSV(f'dane-imgw\B00202A_{year}_{month}.csv', year, month)
+    print(data)
 
 
 if __name__ == '__main__':
