@@ -1,13 +1,21 @@
 from tqdm import tqdm
+import os
 import requests
 import zipfile
 
 
+def check_folder(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+
 def downloadFiles(year, month):
-    url = f"https://dane.imgw.pl/datastore/getfiledown/Arch/Telemetria/Meteo/{year}/Meteo_{year}-{month}.zip"
+    url = f'https://dane.imgw.pl/datastore/getfiledown/Arch/Telemetria/Meteo/{year}/Meteo_{year}-{month}.zip'
     response = requests.get(url, stream=True)
-    fileName = f"dane-imgw\Meteo_{year}-{month}.zip"
-    with open(fileName, "wb") as handle:
+    folder_path = 'dane-imgw'
+    check_folder(folder_path)
+    fileName = f'{folder_path}\Meteo_{year}-{month}.zip'
+    with open(fileName, 'wb') as handle:
         for data in tqdm(response.iter_content()):
             handle.write(data)
 
@@ -20,8 +28,8 @@ def unzipFiles(year, month):
 
 
 def main():
-    year = str(input("Podaj rok: "))
-    month = str(input("Podaj miesiąc: "))
+    year = input('Podaj rok: ')
+    month = input('Podaj miesiąc: ')
     downloadFiles(year, month)
     unzipFiles(year, month)
 
