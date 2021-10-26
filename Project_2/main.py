@@ -22,26 +22,27 @@ def downloadFiles(year, month):
 
 
 def unzipFiles(year, month):
-    zip_path = f'dane-imgw\Meteo_{year}-{month}.zip'
-    extract_path = f'dane-imgw-{year}-{month}'
-    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+    zip_path = f"dane-imgw\Meteo_{year}-{month}.zip"
+    extract_path = f"dane-imgw-{year}-{month}"
+    with zipfile.ZipFile(zip_path, "r") as zip_ref:
         zip_ref.extractall(extract_path)
+    return extract_path
 
 
-def readCSV(path, year, month):
-    csv_path = f'dane-imgw\B00202A_{year}_{month}.csv'
+def readCSV(path):
+    csv_path = f'{path}'
     data = pd.read_csv(csv_path, sep=';')
     return data
 
 
 def main():
-    year = input('Podaj rok: ')
-    month = input('Podaj miesiąc: ')
+    year = input("Podaj rok: ")
+    month = input("Podaj miesiąc: ")
     # downloadFiles(year, month)
-    # unzipFiles(year, month)
-    readCSV(f'dane-imgw\B00202A_{year}_{month}.csv', year, month)
+    filesPath = unzipFiles(year, month)
+    data = readCSV(f'{filesPath}\B00202A_{year}_{month}.csv')
     print(data)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
