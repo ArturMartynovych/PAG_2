@@ -30,12 +30,15 @@ def unzipFiles(year, month):
 
 
 def readCSV(path):
-    data = pd.read_csv(path, sep=';')
+    data = pd.read_csv(path, header=None, sep=';')
+    data = data[data.columns[:-1]]
+    data.columns = ['Name', 'Code', 'Date', 'Value']
+    data['Date'] = pd.to_datetime(data['date'], format='%d%b%Y:%H:%M:%S.%f')
     return data
 
 
-listaOfCodes = ["B00300S", "B00305A", "B00202A", "B00702A", "B00703A", "B00608S",
-                "B00604S", "B00606S", "B00802A", "B00714A", "B00910A"]
+listOfCodes = ["B00300S", "B00305A", "B00202A", "B00702A", "B00703A", "B00608S",
+               "B00604S", "B00606S", "B00802A", "B00714A", "B00910A"]
 
 
 def main():
@@ -43,7 +46,8 @@ def main():
     month = input("Podaj miesiąc: ")
     # downloadFiles(year, month)
     filesPath = unzipFiles(year, month)
-    data = readCSV(f'{filesPath}\{listaOfCodes[2]}_{year}_{month}.csv')
+    data = readCSV(f'{filesPath}\{listOfCodes[0]}_{year}_{month}.csv')
+
     print(data)
 
 
