@@ -1,4 +1,5 @@
 from tqdm import tqdm
+import geojson
 import pandas as pd
 import os
 import requests
@@ -33,7 +34,7 @@ def readCSV(path):
     data = pd.read_csv(path, header=None, sep=';')
     data = data[data.columns[:-1]]
     data.columns = ['Name', 'Code', 'Date', 'Value']
-    data['Date'] = pd.to_datetime(data['date'], format='%Y%b%d:%H:%M:%S.%f')
+    data['Date'] = pd.to_datetime(data['Date'], format='%Y-%m-%d %H:%M')
     return data
 
 
@@ -41,14 +42,38 @@ listOfCodes = ["B00300S", "B00305A", "B00202A", "B00702A", "B00703A", "B00608S",
                "B00604S", "B00606S", "B00802A", "B00714A", "B00910A"]
 
 
+def dictionaryOfCoordinated(path):
+    lista = []
+
+    with open(path) as f:
+        geoData = geojson.load(f)
+
+    for feature in geoData['features']:
+        ID = feature['properties']['ifcid']
+        Coordinates = feature['geometry']['coordinates']
+        items = (ID, Coordinates)
+        lista.append(items)
+    return lista
+
+
+PATH = 'effacility.geojson'
+
+
 def main():
-    year = input("Podaj rok: ")
-    month = input("Podaj miesiąc: ")
+    # year = input("Podaj rok: ")
+    year = '2021'
+    month = '09'
+    # month = input("Podaj miesiąc: ")
     # downloadFiles(year, month)
     filesPath = unzipFiles(year, month)
     data = readCSV(f'{filesPath}\{listOfCodes[0]}_{year}_{month}.csv')
+    listOfID_and_Coordinates = dictionaryOfCoordinated(PATH)
+    # print(int(len(myList)))
+    for i in range(len(listOfID_and_Coordinates)):
+        print(listOfID_and_Coordinates[i][1])
 
-    print(data)
+    # cos = data.Date.dt.day
+    # print(data.head(10))
 
 
 if __name__ == "__main__":
