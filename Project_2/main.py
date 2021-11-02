@@ -33,7 +33,7 @@ def readCSV(path):
     data = pd.read_csv(path, header=None, sep=';')
     data = data[data.columns[:-1]]
     data.columns = ['Name', 'Code', 'Date', 'Value']
-    data['Date'] = pd.to_datetime(data['date'], format='%d%b%Y:%H:%M:%S.%f')
+    data['Date'] = pd.to_datetime(data['date'], format='%Y%b%d:%H:%M:%S.%f')
     return data
 
 
