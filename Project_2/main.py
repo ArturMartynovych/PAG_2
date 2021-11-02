@@ -1,4 +1,5 @@
 from tqdm import tqdm
+from scipy import stats
 import pandas as pd
 import os
 import requests
@@ -30,15 +31,24 @@ def unzipFiles(year, month):
 
 
 def readCSV(path):
-    data = pd.read_csv(path, header=None, sep=';')
+    data = pd.read_csv(path, header=None, sep=';', decimal=',')
     data = data[data.columns[:-1]]
     data.columns = ['Name', 'Code', 'Date', 'Value']
-    data['Date'] = pd.to_datetime(data['date'], format='%d%b%Y:%H:%M:%S.%f')
+    data['Date'] = pd.to_datetime(data['Date'], format='%Y-%m-%d %H:%M')
     return data
 
 
 listOfCodes = ["B00300S", "B00305A", "B00202A", "B00702A", "B00703A", "B00608S",
                "B00604S", "B00606S", "B00802A", "B00714A", "B00910A"]
+
+
+def getStatistics(data):
+    data_mean = data.groupby([data['Date'].dt.day])['Value'].mean()
+    data_median = data.groupby([data['Date'].dt.day])['Value'].median()
+    data_trim_mean = stats.trim_mean(data_mean, 0.1)
+    frame = {'Mean': data_mean, 'Median': data_median}
+    result = pd.DataFrame(frame)
+    return result, data_trim_mean
 
 
 def main():
@@ -47,9 +57,7 @@ def main():
     # downloadFiles(year, month)
     filesPath = unzipFiles(year, month)
     data = readCSV(f'{filesPath}\{listOfCodes[0]}_{year}_{month}.csv')
-
-    print(data)
-
+    getStatistics(data)
 
 if __name__ == "__main__":
     main()
