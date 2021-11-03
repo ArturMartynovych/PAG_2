@@ -42,7 +42,7 @@ listOfCodes = ["B00300S", "B00305A", "B00202A", "B00702A", "B00703A", "B00608S",
                "B00604S", "B00606S", "B00802A", "B00714A", "B00910A"]
 
 
-def dictionaryOfCoordinated(path):
+def listOfCoordinated(path):
     lista = []
 
     with open(path) as f:
@@ -67,7 +67,7 @@ def main():
     # downloadFiles(year, month)
     filesPath = unzipFiles(year, month)
     data = readCSV(f'{filesPath}\{listOfCodes[0]}_{year}_{month}.csv')
-    listOfID_and_Coordinates = dictionaryOfCoordinated(PATH)
+    listOfID_and_Coordinates = listOfCoordinated(PATH)
     # print(int(len(myList)))
     for i in range(len(listOfID_and_Coordinates)):
         print(listOfID_and_Coordinates[i][1])
