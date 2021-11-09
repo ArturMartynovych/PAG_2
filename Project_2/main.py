@@ -41,14 +41,6 @@ def readCSV(path):
 listOfCodes = ["B00300S", "B00305A", "B00202A", "B00702A", "B00703A", "B00608S",
                "B00604S", "B00606S", "B00802A", "B00714A", "B00910A"]
 
-def getStatistics(data):
-    data_mean = data.groupby([data['Date'].dt.day])['Value'].mean()
-    data_median = data.groupby([data['Date'].dt.day])['Value'].median()
-    data_trim_mean = stats.trim_mean(data_mean, 0.1)
-    frame = {'Mean': data_mean, 'Median': data_median}
-    result = pd.DataFrame(frame)
-    return result, data_trim_mean
-
 
 def getStatistics(data):
     data_mean = data.groupby([data['Date'].dt.day])['Value'].mean()
