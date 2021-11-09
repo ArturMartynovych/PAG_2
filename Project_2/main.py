@@ -41,6 +41,14 @@ def readCSV(path):
 listOfCodes = ["B00300S", "B00305A", "B00202A", "B00702A", "B00703A", "B00608S",
                "B00604S", "B00606S", "B00802A", "B00714A", "B00910A"]
 
+def getStatistics(data):
+    data_mean = data.groupby([data['Date'].dt.day])['Value'].mean()
+    data_median = data.groupby([data['Date'].dt.day])['Value'].median()
+    data_trim_mean = stats.trim_mean(data_mean, 0.1)
+    frame = {'Mean': data_mean, 'Median': data_median}
+    result = pd.DataFrame(frame)
+    return result, data_trim_mean
+
 
 def getStatistics(data):
     data_mean = data.groupby([data['Date'].dt.day])['Value'].mean()
@@ -51,12 +59,42 @@ def getStatistics(data):
     return result, data_trim_mean
 
 
+def listOfCoordinated(path):
+    lista = []
+
+    with open(path) as f:
+        geoData = geojson.load(f)
+
+    for feature in geoData['features']:
+        ID = feature['properties']['ifcid']
+        Coordinates = feature['geometry']['coordinates']
+        items = (ID, Coordinates)
+        lista.append(items)
+    return lista
+
+
+PATH = 'effacility.geojson'
+
+
 def main():
-    year = input("Podaj rok: ")
-    month = input("Podaj miesiąc: ")
+    # year = input("Podaj rok: ")
+    year = '2021'
+    month = '09'
+    # month = input("Podaj miesiąc: ")
+    # downloadFiles(year, month)
+    # filesPath = unzipFiles(year, month)
+    # data = readCSV(f'{filesPath}\{listOfCodes[0]}_{year}_{month}.csv')
+    # year = input("Podaj rok: ")
+    year = '2021'
+    month = '09'
+    # month = input("Podaj miesiąc: ")
     # downloadFiles(year, month)
     filesPath = unzipFiles(year, month)
     data = readCSV(f'{filesPath}\{listOfCodes[0]}_{year}_{month}.csv')
+    listOfID_and_Coordinates = listOfCoordinated(PATH)
+    # print(int(len(myList)))
+    for i in range(len(listOfID_and_Coordinates)):
+        print(listOfID_and_Coordinates[i][1])
     getStatistics(data)
 
 if __name__ == "__main__":
