@@ -1,6 +1,7 @@
 from tqdm import tqdm
 from scipy import stats
 import pandas as pd
+import geojson
 import os
 import requests
 import zipfile
@@ -8,7 +9,7 @@ import zipfile
 
 def check_folder(directory):
     if not os.path.exists(directory):
-        os.makedirs(directory)
+        os.mkdir(directory)
 
 
 def downloadFiles(year, month):
@@ -54,7 +55,7 @@ def getStatistics(data):
 def listOfCoordinated(path):
     lista = []
 
-    with open(path) as f:
+    with open(path, encoding='utf-8') as f:
         geoData = geojson.load(f)
 
     for feature in geoData['features']:
@@ -69,18 +70,11 @@ PATH = 'effacility.geojson'
 
 
 def main():
-    # year = input("Podaj rok: ")
     year = '2021'
     month = '09'
-    # month = input("Podaj miesiąc: ")
-    # downloadFiles(year, month)
-    # filesPath = unzipFiles(year, month)
-    # data = readCSV(f'{filesPath}\{listOfCodes[0]}_{year}_{month}.csv')
-    # year = input("Podaj rok: ")
-    year = '2021'
-    month = '09'
-    # month = input("Podaj miesiąc: ")
-    # downloadFiles(year, month)
+    dir = f"dane-imgw-{year}-{month}"
+    if not os.path.exists(dir):
+       downloadFiles(year, month)
     filesPath = unzipFiles(year, month)
     data = readCSV(f'{filesPath}\{listOfCodes[0]}_{year}_{month}.csv')
     listOfID_and_Coordinates = listOfCoordinated(PATH)
