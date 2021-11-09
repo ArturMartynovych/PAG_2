@@ -61,4 +61,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-    print("GitHub jest słaby")
+    print("GitHub jest bardzo głupi")
