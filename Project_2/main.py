@@ -4,6 +4,9 @@ import pandas as pd
 import os
 import requests
 import zipfile
+import geopandas as gpd
+from pandas.io.json import json_normalize
+from astral.sun import sun
 
 
 def check_folder(directory):
@@ -51,27 +54,30 @@ def getStatistics(data):
     return result, data_trim_mean
 
 
-def listOfCoordinated(path):
-    lista = []
+def names_of_miejc():
+    stacji = gpd.read_file("effacility (1).geojson")
+    stacji.set_crs(epsg=2180, inplace=True, allow_override=True)
+    stacji.to_crs(epsg=4326, inplace=True)
 
-    with open(path) as f:
-        geoData = geojson.load(f)
+    powiaty = gpd.read_file("Dane/powiaty.shp")
+    powiaty.to_crs(epsg=4326, inplace=True)
 
-    for feature in geoData['features']:
-        ID = feature['properties']['ifcid']
-        Coordinates = feature['geometry']['coordinates']
-        items = (ID, Coordinates)
-        lista.append(items)
-    return lista
+    wojew = gpd.read_file("Dane/woj.shp")
+    wojew.to_crs(epsg=4326, inplace=True)
 
+    stacji_in_wojew = stacji.sjoin(wojew, how="inner", predicate="intersects")
+    stacji_in_wojew = stacji_in_wojew[["ifcid", "name1", "name_right", "geometry"]]
+    all_together = stacji_in_wojew.sjoin(powiaty, how="inner", predicate="intersects")
+    all_together = all_together[["ifcid", "name1", "name_right", "geometry", "name"]]
+    all_together.rename(columns={"name1": "Name of Station", "name_right": "Województwo", "name": "Powiat"}, inplace=True)
+    # print(all_together)
+    return all_together
 
-PATH = 'effacility.geojson'
+# PATH = 'effacility.geojson'
 
 
 def main():
     # year = input("Podaj rok: ")
-    year = '2021'
-    month = '09'
     # month = input("Podaj miesiąc: ")
     # downloadFiles(year, month)
     # filesPath = unzipFiles(year, month)
@@ -83,12 +89,22 @@ def main():
     # downloadFiles(year, month)
     filesPath = unzipFiles(year, month)
     data = readCSV(f'{filesPath}\{listOfCodes[0]}_{year}_{month}.csv')
-    listOfID_and_Coordinates = listOfCoordinated(PATH)
+    # wsp = dane_from_geojson()
+    names_of_miejc()
+    # print(listOfCoordinated(PATH))
+    # dane = data_from_json(PATH)
+    # print(dane)
     # print(int(len(myList)))
-    for i in range(len(listOfID_and_Coordinates)):
-        print(listOfID_and_Coordinates[i][1])
-    getStatistics(data)
+    # for i in range(len(dane)):
+    #     print(dane[i])
+    # listOfCoordinated(PATH)
+    # print(stacje)
+
+    print("-------------------------------")
+    # result, trim_mean = getStatistics(data)
+    # print(result)
+    # print(trim_mean)
+
 
 if __name__ == "__main__":
     main()
-    print("GitHub jest bardzo głupi")
