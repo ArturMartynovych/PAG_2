@@ -4,11 +4,6 @@ import pandas as pd
 import os
 import requests
 import zipfile
-import geopandas as gpd
-import time
-import datetime
-from astral.sun import sun
-from astral import LocationInfo
 
 
 def check_folder(directory):
@@ -46,11 +41,46 @@ def readCSV(path):
 listOfCodes = ["B00300S", "B00305A", "B00202A", "B00702A", "B00703A", "B00608S",
                "B00604S", "B00606S", "B00802A", "B00714A", "B00910A"]
 
-year = '2021'
-month = '09'
+
+def getStatistics(data):
+    data_mean = data.groupby([data['Date'].dt.day])['Value'].mean()
+    data_median = data.groupby([data['Date'].dt.day])['Value'].median()
+    data_trim_mean = stats.trim_mean(data_mean, 0.1)
+    frame = {'Mean': data_mean, 'Median': data_median}
+    result = pd.DataFrame(frame)
+    return result, data_trim_mean
 
 
-def imgw_data(year, month):
+def listOfCoordinated(path):
+    lista = []
+
+    with open(path) as f:
+        geoData = geojson.load(f)
+
+    for feature in geoData['features']:
+        ID = feature['properties']['ifcid']
+        Coordinates = feature['geometry']['coordinates']
+        items = (ID, Coordinates)
+        lista.append(items)
+    return lista
+
+
+PATH = 'effacility.geojson'
+
+
+def main():
+    # year = input("Podaj rok: ")
+    year = '2021'
+    month = '09'
+    # month = input("Podaj miesiąc: ")
+    # downloadFiles(year, month)
+    # filesPath = unzipFiles(year, month)
+    # data = readCSV(f'{filesPath}\{listOfCodes[0]}_{year}_{month}.csv')
+    # year = input("Podaj rok: ")
+    year = '2021'
+    month = '09'
+    # month = input("Podaj miesiąc: ")
+    # downloadFiles(year, month)
     filesPath = unzipFiles(year, month)
     data = readCSV(f'{filesPath}\{listOfCodes[0]}_{year}_{month}.csv')
     data['Date'] = pd.to_datetime(data['Date'])
@@ -76,7 +106,7 @@ def names_of_miejc():
     stacji_in_wojew = stacji_in_wojew[["ifcid", "name1", "name_right", "geometry"]]
     all_together = stacji_in_wojew.sjoin(powiaty, how="inner", predicate="intersects")
     all_together = all_together[["ifcid", "name1", "name_right", "name", "geometry"]]
-    all_together.rename(columns={"name1": "Name of Station", "name_right": "Województwo", "name": "Powiat"},
+    all_together.rename(columns={"name1": "Name of Station", "name_right": "Wojewodztwo", "name": "Powiat"},
                         inplace=True)
     # Getting x and y values from geometry
     all_together['lat'] = all_together.geometry.x
@@ -91,7 +121,7 @@ def merge_all(year, month):
 
     data_of_stations = pd.merge(data, meteo_stations, left_on='Name', right_on='ifcid')
     data_of_stations = data_of_stations[['ifcid', 'Name', 'Date', 'Time', 'Value', 'Name of Station',
-                                         'Województwo', 'Powiat', 'geometry', 'lat', 'lon']]
+                                         'Wojewodztwo', 'Powiat', 'geometry', 'lat', 'lon']]
     # print(data_of_stations)
     return data_of_stations
 
@@ -140,17 +170,23 @@ def value_in(data):
 
     trim = lambda x: stats.trim_mean(x, 0.1)
 
-    wojew_per_day = data[['Value', 'Województwo', 'Date', 'day']].groupby(
-        ['Województwo', 'Date', 'day']).agg({"Value": trim}).reset_index()
+    wojew_per_day = data[['Value', 'Wojewodztwo', 'Date', 'day']].groupby(
+        ['Wojewodztwo', 'Date', 'day']).agg({"Value": trim}).reset_index()
 
     powiat_per_day = data[['Value', 'Powiat', 'Date', 'day']].groupby(
         ['Powiat', 'Date', 'day']).agg({"Value": trim}).reset_index()
 
-    wojew_per_10_min = data[['Value', 'Województwo', 'Date', 'Time', 'day']].groupby(
-        ['Województwo', 'Date', 'Time', 'day']).agg({"Value": trim}).reset_index()
+    wojew_per_10_min = data[['Value', 'Wojewodztwo', 'Date', 'Time', 'day']].groupby(
+        ['Wojewodztwo', 'Date', 'Time', 'day']).agg({"Value": trim}).reset_index()
 
     powiat_per_10_min = data[['Value', 'Powiat', 'Date', 'Time', 'day']].groupby(
         ['Powiat', 'Date', 'Time', 'day']).agg({"Value": trim}).reset_index()
+
+    wojew_per_10_min['Date'] = wojew_per_10_min['Date'].astype(str)
+    wojew_per_10_min['Time'] = wojew_per_10_min['Time'].astype(str)
+
+    powiat_per_10_min['Date'] = powiat_per_10_min['Date'].astype(str)
+    powiat_per_10_min['Time'] = powiat_per_10_min['Time'].astype(str)
 
     value_wojew.append(wojew_per_day)
     value_wojew.append(wojew_per_10_min)
@@ -160,15 +196,46 @@ def value_in(data):
     return value_wojew, value_powiat
 
 
+def db_redis(value_wojew, value_powiat):
+    wojew_per_10_min = value_wojew[1]
+    powiat_per_10_min = value_powiat[1]
+
+    pool = redis.ConnectionPool(host='127.0.0.1', port=6379, db=0, decode_responses=True)
+    db_r = redis.Redis(connection_pool=pool)
+
+    # Dane województw
+
+    keys_woj = [str(key) for key in wojew_per_10_min.iloc[:, :-1].to_dict('records')]
+    values_woj = wojew_per_10_min[['Value']].to_dict('records')
+
+    for key, value in zip(keys_woj, values_woj):
+        db_r.hmset(key, value)
+
+    # # Dane powiatów
+    #
+    # keys_p = [str(key) for key in powiat_per_10_min.iloc[:, :-1].to_dict('records')]
+    # values_p = powiat_per_10_min[['Value']].to_dict('records')
+
+    # for key, value in zip(keys_p, values_p):
+    #     db_r.hmset(key, value)
+
+    print(db_r.hgetall("{'Wojewodztwo': 'świętokrzyskie', 'Date': '2021-09-30', 'Time': '23:50:00', 'day': False}"))
+    # return db_r
+
+
 def main():
     data_stations = adding_sun_day('2021', '09')
     value_wojew, value_powiat = value_in(data_stations)
     # print(value_wojew[0])       # Value w Województwach dla każdego dnia, w zależności od dnia i nocy
-    # print(value_wojew[1])       # Value w Województwach co 10 minut, w zależności od dnia i nocy
+    print(value_wojew[1])       # Value w Województwach co 10 minut, w zależności od dnia i nocy
 
     # print(value_powiat[0])      # Value w Powiecie dla każdego dnia, w zależności od dnia i nocy
-    print(value_powiat[1])  # Value w Powiecie co 10 minut, w zależności od dnia i nocy
+    # print(value_powiat[1])  # Value w Powiecie co 10 minut, w zależności od dnia i nocy
+    print("-" * 50)
+    db_redis(value_wojew, value_powiat)
+    # print()
 
 
 if __name__ == "__main__":
     main()
+    print("GitHub jest bardzo głupi")
